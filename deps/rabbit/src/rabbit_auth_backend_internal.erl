@@ -1013,14 +1013,20 @@ is_over_channel_limit(Username) ->
     is_over_limit(Username, <<"max-channels">>, Fun).
 
 is_over_limit(Username, LimitType, Fun) ->
-    case get_user_limit(Username, LimitType) of
-        undefined -> false;
-        {ok, 0} -> {true, 0};
-        {ok, Limit} ->
-            case Fun() >= Limit of
-                false -> false;
-                true -> {true, Limit}
-            end
+    case application:get_env(rabbit, rabbit_tracking_enabled, true) of
+        true ->
+            case get_user_limit(Username, LimitType) of
+                undefined -> false;
+                {ok, 0} -> {true, 0};
+                {ok, Limit} ->
+                    case Fun() >= Limit of
+                        false -> false;
+                        true -> {true, Limit}
+                    end
+            end;
+
+        false ->
+            false
     end.
 
 get_user_limit(Username, LimitType) ->

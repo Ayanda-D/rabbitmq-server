@@ -84,24 +84,30 @@ list(VHost) ->
 -spec is_over_connection_limit(vhost:name()) -> {true, non_neg_integer()} | false.
 
 is_over_connection_limit(VirtualHost) ->
-    case rabbit_vhost_limit:connection_limit(VirtualHost) of
-        %% no limit configured
-        undefined                                            -> false;
-        %% with limit = 0, no connections are allowed
-        {ok, 0}                                              -> {true, 0};
-        {ok, Limit} when is_integer(Limit) andalso Limit > 0 ->
-            ConnectionCount =
-                rabbit_connection_tracking:count_tracked_items_in({vhost, VirtualHost}),
-            case ConnectionCount >= Limit of
-                false -> false;
-                true  -> {true, Limit}
+    case application:get_env(rabbit, rabbit_tracking_enabled, true) of
+        true ->
+            case rabbit_vhost_limit:connection_limit(VirtualHost) of
+                %% no limit configured
+                undefined                                            -> false;
+                %% with limit = 0, no connections are allowed
+                {ok, 0}                                              -> {true, 0};
+                {ok, Limit} when is_integer(Limit) andalso Limit > 0 ->
+                    ConnectionCount =
+                        rabbit_connection_tracking:count_tracked_items_in({vhost, VirtualHost}),
+                    case ConnectionCount >= Limit of
+                        false -> false;
+                        true  -> {true, Limit}
+                    end;
+                %% any negative value means "no limit". Note that parameter validation
+                %% will replace negative integers with 'undefined', so this is to be
+                %% explicit and extra defensive
+                {ok, Limit} when is_integer(Limit) andalso Limit < 0 -> false;
+                %% ignore non-integer limits
+                {ok, _Limit}                                         -> false
             end;
-        %% any negative value means "no limit". Note that parameter validation
-        %% will replace negative integers with 'undefined', so this is to be
-        %% explicit and extra defensive
-        {ok, Limit} when is_integer(Limit) andalso Limit < 0 -> false;
-        %% ignore non-integer limits
-        {ok, _Limit}                                         -> false
+
+        false ->
+            false
     end.
 
 -spec would_exceed_queue_limit(non_neg_integer(), vhost:name()) ->

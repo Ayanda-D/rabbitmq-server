@@ -24,11 +24,22 @@
 -callback count_tracked_items_in(term()) -> non_neg_integer().
 -callback shutdown_tracked_items(list(), term()) -> ok.
 
+-export([track/2]).
 -export([id/2, delete_tracked_entry/4, delete_tracked_entry_internal/4]).
 -export([count_on_all_nodes/4, match_tracked_items/2]).
 -export([read_ets_counter/2, match_tracked_items_local/2]).
 
 %%----------------------------------------------------------------------------
+
+-spec track(atom(), term()) -> ok.
+track(CallbackMod, Event) when is_atom(CallbackMod) ->
+    case application:get_env(rabbit, rabbit_tracking_enabled, true) of
+        true ->
+            _Pid = spawn(CallbackMod, handle_cast, [Event]);
+
+        false ->
+            ok
+    end.
 
 -spec id(atom(), term()) ->
     rabbit_types:tracked_connection_id() | rabbit_types:tracked_channel_id().

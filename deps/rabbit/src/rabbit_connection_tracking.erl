@@ -59,8 +59,7 @@
 -spec update_tracked(term()) -> ok.
 
 update_tracked(Event) ->
-    spawn(?MODULE, handle_cast, [Event]),
-    ok.
+    rabbit_tracking:track(?MODULE, Event).
 
 %% Asynchronously handle update events
 -spec handle_cast(term()) -> ok.
