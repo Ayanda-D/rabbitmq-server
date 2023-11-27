@@ -35,7 +35,8 @@
 track(CallbackMod, Event) when is_atom(CallbackMod) ->
     case application:get_env(rabbit, rabbit_tracking_enabled, true) of
         true ->
-            _Pid = spawn(CallbackMod, handle_cast, [Event]);
+            _Pid = spawn(CallbackMod, handle_cast, [Event]),
+            ok;
 
         false ->
             ok
