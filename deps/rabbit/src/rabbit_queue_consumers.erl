@@ -50,6 +50,7 @@
              limiter,
              %% Internal flow control for queue -> writer
              unsent_message_count :: non_neg_integer(),
+             unsent_message_limit :: non_neg_integer(),
              link_states :: #{rabbit_types:ctag() => #link_state{}}
             }).
 
@@ -624,6 +625,7 @@ ch_record(ChPid, LimiterPid) ->
                              blocked_consumers    = priority_queue:new(),
                              limiter              = Limiter,
                              unsent_message_count = 0,
+                             unsent_message_limit = ?UNSENT_MESSAGE_LIMIT,
                              link_states = #{}},
                      put(Key, C),
                      C;
@@ -653,8 +655,10 @@ all_ch_record() -> [C || {{ch, _}, C} <- get()].
 block_consumer(C = #cr{blocked_consumers = Blocked}, QEntry) ->
     update_ch_record(C#cr{blocked_consumers = add_consumer(QEntry, Blocked)}).
 
-is_ch_blocked(#cr{unsent_message_count = Count, limiter = Limiter}) ->
-    Count >= ?UNSENT_MESSAGE_LIMIT orelse rabbit_limiter:is_suspended(Limiter).
+is_ch_blocked(#cr{unsent_message_count = Count,
+                  unsent_message_limit = UnsentMsgLimit,
+                  limiter = Limiter}) ->
+    Count >= UnsentMsgLimit orelse rabbit_limiter:is_suspended(Limiter).
 
 tags(CList) -> [CTag || {_P, {_ChPid, #consumer{tag = CTag}}} <- CList].
 
