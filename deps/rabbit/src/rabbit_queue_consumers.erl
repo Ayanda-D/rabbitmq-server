@@ -22,8 +22,8 @@
 
 -define(QUEUE, lqueue).
 
--define(UNSENT_MESSAGE_LIMIT,
-    application:get_env(rabbit, classic_queue_consumer_unsent_message_limit, 200)).
+-define(UNSENT_MESSAGE_LIMIT, erlang:get(unsent_message_limit)).
+
 
 %% Utilisation average calculations are all in μs.
 -define(USE_AVG_HALF_LIFE, 1000000.0).
@@ -169,6 +169,7 @@ add(ChPid, CTag, NoAck, LimiterPid, LimiterActive,
                                                            delivery_count = InitialDeliveryCount}}}
         end,
     update_ch_record(C),
+    erlang:put(unsent_message_limit, application:get_env(rabbit, classic_queue_consumer_unsent_message_limit, 200)),
     Consumer = #consumer{tag          = CTag,
                          ack_required = not NoAck,
                          prefetch     = parse_prefetch_count(ModeOrPrefetch),
