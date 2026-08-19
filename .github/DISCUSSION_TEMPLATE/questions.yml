@@ -51,6 +51,7 @@ body:
   attributes:
     label: Erlang version used
     options:
+    - 28.4.x
     - 28.3.x
     - 28.2.x
     - 28.1.x
